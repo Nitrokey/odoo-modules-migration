@@ -181,6 +181,9 @@ def analyse(yaml_file, odoo_version):
         # Print grouped results with better formatting and colors
         for state_name, modules in state_groups.items():
             if modules:  # Only print if there are modules in this state
+                # Sort modules alphabetically
+                modules.sort()
+                
                 # Color codes for different states
                 if state_name == 'Not evaluated':
                     color = '\033[93m'  # Yellow

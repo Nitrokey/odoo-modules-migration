@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import csv
 import sys
@@ -144,6 +146,15 @@ def analyse(yaml_file, odoo_version):
             if existing_data is None:
                 existing_data = []
 
+        # Dictionary to group modules by their state
+        state_groups = {
+            'Not evaluated': [],
+            'Required but not installed': [],
+            'Desired but not installed': [],
+            'Not desired but installed': [],
+            'Not required but installed': []
+        }
+        
         required_and_migrated_count = 0
 
         for entry in existing_data:
@@ -153,22 +164,53 @@ def analyse(yaml_file, odoo_version):
             name = entry.get('name', '')
 
             if not evaluation:
-                print(f"Not evaluated: {name}")
+                state_groups['Not evaluated'].append(name)
             elif state == 'not installed':
                 if evaluation == 'required':
-                    print(f"Required but not installed: {name}")
+                    state_groups['Required but not installed'].append(name)
                 elif evaluation == 'desired':
-                    print(f"Desired but not installed: {name}")
+                    state_groups['Desired but not installed'].append(name)
             elif state == 'installed':
                 if evaluation == 'not desired':
-                    print(f"Not desired but installed: {name}")
+                    state_groups['Not desired but installed'].append(name)
                 elif evaluation == 'not required':
-                    print(f"Not required but installed: {name}")
+                    state_groups['Not required but installed'].append(name)
                 elif evaluation == 'required':
                     required_and_migrated_count += 1
 
+        # Print grouped results with better formatting and colors
+        for state_name, modules in state_groups.items():
+            if modules:  # Only print if there are modules in this state
+                # Color codes for different states
+                if state_name == 'Not evaluated':
+                    color = '\033[93m'  # Yellow
+                elif state_name == 'Required but not installed':
+                    color = '\033[91m'  # Red
+                elif state_name == 'Desired but not installed':
+                    color = '\033[94m'  # Blue
+                elif state_name == 'Not desired but installed':
+                    color = '\033[95m'  # Magenta
+                elif state_name == 'Not required but installed':
+                    color = '\033[96m'  # Cyan
+                else:
+                    color = '\033[0m'   # Default
+                
+                reset_color = '\033[0m'  # Reset color
+                
+                # Print status with module count on its own line with color
+                module_count = len(modules)
+                print(f"{color}{state_name}: {module_count} modules{reset_color}")
+                
+                # Print modules indented on the same line, separated by spaces
+                modules_str = ' '.join(modules)
+                print(f"  {modules_str}")
+                print()  # Empty line for better separation
+
         if required_and_migrated_count > 0:
-            print(f"Required and migrated modules: {required_and_migrated_count}")
+            color = '\033[92m'  # Green
+            reset_color = '\033[0m'
+            print(f"{color}Required and migrated modules:{reset_color}")
+            print(f"  └─ {required_and_migrated_count} modules")
 
     except FileNotFoundError:
         print(f"Error: {yaml_file} not found.")

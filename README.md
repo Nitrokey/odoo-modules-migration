@@ -8,7 +8,7 @@ This tool aims to support the migration of Odoo installations by providing a cur
 Typically "source version" refers to the currently installed version (e.g. 12.0) and "target version" to the higher migration target version (e.g. 15.0). OMM can even be used to manage more than two versions.
 
 1. Retrieve list of installed modules on production system, source version:
-`docker-compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author, state, auto_install FROM ir_module_module WHERE state = 'installed' ORDER BY name" 2> /dev/null 1> /tmp/installed-modules.csv`
+`docker compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author, state, auto_install FROM ir_module_module WHERE state = 'installed' ORDER BY name" 2> /dev/null 1> /tmp/installed-modules.csv`
 
 2. Add the list to a modules.yaml database, e.g. `python3 omm.py import-csv installed-modules.csv modules.yaml 12.0`
 
@@ -17,11 +17,11 @@ Typically "source version" refers to the currently installed version (e.g. 12.0)
 **WARNING: This will delete the database!**
 
 ```
-docker-compose run --rm odoo stop && \  
-docker-compose run --rm odoo dropdb odoo && \
-docker-compose run --rm odoo createdb odoo && \
-docker-compose run --rm odoo odoo update && \
-docker-compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author, state, auto_install FROM ir_module_module WHERE state = 'installed' ORDER BY name" 2> /dev/null 1> /tmp/installed-modules.csv
+docker compose run --rm odoo stop && \  
+docker compose run --rm odoo dropdb odoo && \
+docker compose run --rm odoo createdb odoo && \
+docker compose run --rm odoo odoo update && \
+docker compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author, state, auto_install FROM ir_module_module WHERE state = 'installed' ORDER BY name" 2> /dev/null 1> /tmp/installed-modules.csv
 ```
 
 4. Add this list similarly as in step 2. Alternatively you can populate the modules.yaml with an empty set of modules, e.g. `python3 omm.py add-version modules.yaml 15.0`
@@ -40,12 +40,23 @@ docker-compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author
 Exemplary output:
 
 ```
-Not desired but installed: account_bank_statement_import
-Required but not installed: account_bank_statement_import_camt_oca
-Not evaluated: account_bank_statement_import_online_paypal
-Desired but not installed: account_bank_statement_import_txt_xlsx
-Not required but installed: account_bank_statement_import
-Required and migrated modules: 1
+Not desired but installed: 1 modules
+  account_bank_statement_import
+
+Required but not installed: 1 modules
+  account_bank_statement_import_camt_oca
+
+Not evaluated: 1 modules
+  account_bank_statement_import_online_paypal
+
+Desired but not installed: 1 modules
+  account_bank_statement_import_txt_xlsx
+
+Not required but installed: 1 modules
+  account_bank_statement_import
+
+Required and migrated modules:
+  └─ 1 modules
 ```
 
 7. Update the installation status regularly by repeating the above procedure, potentially automated in the CI.

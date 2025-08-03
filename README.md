@@ -36,6 +36,7 @@ docker compose run --rm odoo psql -P pager=off -A -F ';' -c "SELECT name, author
   Add arbitrary notes into the "comment" field, such as reasoning for your evaluation or "module has been renamed to X"
 
 6. Analyse the current state, e.g. `python3 omm.py analyse modules.yaml 15.0`
+  You can filter by authors with `--include-authors` and `--exclude-authors`.
 
 Exemplary output:
 

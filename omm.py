@@ -8,7 +8,7 @@ import re
 import os
 
 # Define the version number
-VERSION = '0.1'
+VERSION = '0.2'
 
 
 def process_csv(input_file, output_file, odoo_version):
@@ -65,6 +65,20 @@ def process_csv(input_file, output_file, odoo_version):
             else:
                 existing_data.append(new_data)
 
+        # Sort entries alphabetically by name and sort version keys within each entry
+        existing_data.sort(key=lambda x: x.get('name', ''))
+        for entry in existing_data:
+            # Sort version keys with highest version first
+            version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
+            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            
+            # Reorder the entry dictionary
+            ordered_entry = {'name': entry['name'], 'author': entry['author']}
+            for version in version_keys:
+                ordered_entry[version] = entry[version]
+            entry.clear()
+            entry.update(ordered_entry)
+
         with open(output_file, 'w') as yaml_file:
             yaml.dump(existing_data, yaml_file, default_flow_style=False, sort_keys=False, width=float('inf'))
 
@@ -111,6 +125,20 @@ def add_version(yaml_file_path, odoo_version):
         for entry in data:
             entry[odoo_version] = {key: '' for key in keys_to_prepopulate}
 
+        # Sort entries alphabetically by name and sort version keys within each entry
+        data.sort(key=lambda x: x.get('name', ''))
+        for entry in data:
+            # Sort version keys with highest version first
+            version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
+            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            
+            # Reorder the entry dictionary
+            ordered_entry = {'name': entry['name'], 'author': entry['author']}
+            for version in version_keys:
+                ordered_entry[version] = entry[version]
+            entry.clear()
+            entry.update(ordered_entry)
+
         with open(yaml_file_path, 'w') as yaml_file:
             yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False, width=float('inf'))
 
@@ -131,6 +159,20 @@ def remove_version(yaml_file_path, odoo_version):
         for entry in data:
             entry.pop(odoo_version, None)
 
+        # Sort entries alphabetically by name and sort version keys within each entry
+        data.sort(key=lambda x: x.get('name', ''))
+        for entry in data:
+            # Sort version keys with highest version first
+            version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
+            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            
+            # Reorder the entry dictionary
+            ordered_entry = {'name': entry['name'], 'author': entry['author']}
+            for version in version_keys:
+                ordered_entry[version] = entry[version]
+            entry.clear()
+            entry.update(ordered_entry)
+
         with open(yaml_file_path, 'w') as yaml_file:
             yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False, width=float('inf'))
 
@@ -139,7 +181,7 @@ def remove_version(yaml_file_path, odoo_version):
         print(f"An error occurred: {e}")
 
 
-def analyse(yaml_file, odoo_version):
+def analyse(yaml_file, odoo_version, include_authors=None, exclude_authors=None):
     try:
         with open(yaml_file, 'r') as existing_yaml_file:
             existing_data = yaml.safe_load(existing_yaml_file)
@@ -162,6 +204,18 @@ def analyse(yaml_file, odoo_version):
             state = entry_data.get('state', '')
             evaluation = entry_data.get('evaluation', '')
             name = entry.get('name', '')
+            author = entry.get('author', '')
+
+            # Apply author filtering
+            if include_authors:
+                # Check if any of the include_authors is found in the author field (case-insensitive, partial match)
+                if not any(inc_author.lower() in author.lower() for inc_author in include_authors):
+                    continue
+            
+            if exclude_authors:
+                # Check if any of the exclude_authors is found in the author field (case-insensitive, partial match)
+                if any(exc_author.lower() in author.lower() for exc_author in exclude_authors):
+                    continue
 
             if not evaluation:
                 state_groups['Not evaluated'].append(name)
@@ -248,9 +302,11 @@ if __name__ == '__main__':
     remove_version_parser.add_argument('odoo_version', help='Odoo version to remove')
 
     # Subparser for --analyse
-    remove_version_parser = subparsers.add_parser('analyse')
-    remove_version_parser.add_argument('yaml_file', help='YAML file')
-    remove_version_parser.add_argument('odoo_version', help='Odoo version to analyse')
+    analyse_parser = subparsers.add_parser('analyse')
+    analyse_parser.add_argument('yaml_file', help='YAML file')
+    analyse_parser.add_argument('odoo_version', help='Odoo version to analyse')
+    analyse_parser.add_argument('--include-authors', nargs='+', help='Include only modules from these authors (space-separated list)')
+    analyse_parser.add_argument('--exclude-authors', nargs='+', help='Exclude modules from these authors (space-separated list)')
 
     parser.add_argument('--version', action='version', version='%(prog)s {}'.format(VERSION))
 
@@ -265,6 +321,6 @@ if __name__ == '__main__':
     elif args.command == 'remove-version':
         remove_version(args.yaml_file, args.odoo_version)
     elif args.command == 'analyse':
-        analyse(args.yaml_file, args.odoo_version)
+        analyse(args.yaml_file, args.odoo_version, args.include_authors, args.exclude_authors)
     else:
         print("Please provide a valid command.")

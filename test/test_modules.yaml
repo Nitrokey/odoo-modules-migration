@@ -1,0 +1,55 @@
+- name: abandoned_carts
+  author: Nitrokey GmbH, Odoo Community Association (OCA)
+  12.0:
+    state: installed
+    auto_install: f
+    evaluation: required
+    comment: Critical module for cart recovery
+  '12.0':
+    state: installed
+    auto_install: f
+    evaluation: ''
+    comment: ''
+- name: account
+  author: Odoo S.A.
+  12.0:
+    state: installed
+    auto_install: f
+    evaluation: required
+    comment: Core accounting module
+  '12.0':
+    state: installed
+    auto_install: f
+    evaluation: ''
+    comment: ''
+- name: account_budget_oca
+  author: Odoo S.A., Odoo Community Association (OCA)
+  '12.0':
+    state: installed
+    auto_install: f
+    evaluation: ''
+    comment: ''
+- name: another_old_module
+  author: Another Author
+  12.0:
+    state: installed
+    auto_install: f
+    evaluation: not required
+    comment: Another module not in CSV
+  '12.0':
+    state: not installed
+    auto_install: ''
+    evaluation: ''
+    comment: ''
+- name: old_module
+  author: Some Author
+  12.0:
+    state: installed
+    auto_install: f
+    evaluation: desired
+    comment: This module will not be in the CSV
+  '12.0':
+    state: not installed
+    auto_install: ''
+    evaluation: ''
+    comment: ''

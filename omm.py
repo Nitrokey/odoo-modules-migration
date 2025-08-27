@@ -56,6 +56,9 @@ def process_csv(input_file, output_file, odoo_version):
             if existing_data is None:
                 existing_data = []
 
+        # Track which modules were found in the CSV
+        csv_module_names = set(data_dict.keys())
+
         for name, new_data in data_dict.items():
             index = next((i for i, item in enumerate(existing_data) if item['name'] == name), None)
             if index is not None:
@@ -65,12 +68,35 @@ def process_csv(input_file, output_file, odoo_version):
             else:
                 existing_data.append(new_data)
 
+        # Handle modules that exist in YAML but not in CSV - set their state to "not installed"
+        for entry in existing_data:
+            entry_name = entry.get('name')
+            if entry_name and entry_name not in csv_module_names:
+                # Module exists in YAML but not in CSV, set state to "not installed"
+                # Check for both string and numeric version keys to handle YAML parsing variations
+                version_key = None
+                for key in entry.keys():
+                    if str(key) == odoo_version:
+                        version_key = key
+                        break
+                
+                if version_key:
+                    entry[version_key]['state'] = 'not installed'
+                else:
+                    # If the version doesn't exist, create it with "not installed" state
+                    entry[odoo_version] = {
+                        'state': 'not installed',
+                        'auto_install': '',
+                        'evaluation': '',
+                        'comment': ''
+                    }
+
         # Sort entries alphabetically by name and sort version keys within each entry
         existing_data.sort(key=lambda x: x.get('name', ''))
         for entry in existing_data:
             # Sort version keys with highest version first
             version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
-            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            version_keys.sort(key=lambda x: [int(i) for i in str(x).split('.')], reverse=True)
             
             # Reorder the entry dictionary
             ordered_entry = {'name': entry['name'], 'author': entry['author']}
@@ -130,7 +156,7 @@ def add_version(yaml_file_path, odoo_version):
         for entry in data:
             # Sort version keys with highest version first
             version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
-            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            version_keys.sort(key=lambda x: [int(i) for i in str(x).split('.')], reverse=True)
             
             # Reorder the entry dictionary
             ordered_entry = {'name': entry['name'], 'author': entry['author']}
@@ -164,7 +190,7 @@ def remove_version(yaml_file_path, odoo_version):
         for entry in data:
             # Sort version keys with highest version first
             version_keys = [k for k in entry.keys() if k not in ['name', 'author']]
-            version_keys.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
+            version_keys.sort(key=lambda x: [int(i) for i in str(x).split('.')], reverse=True)
             
             # Reorder the entry dictionary
             ordered_entry = {'name': entry['name'], 'author': entry['author']}
